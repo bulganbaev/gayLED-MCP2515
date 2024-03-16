@@ -1,0 +1,19 @@
+#ifndef MODES_H
+#define MODES_H
+
+#include "config.h"
+#include "animations.h"
+
+// Define mode identifiers for easier handling
+enum Mode {
+    MODE_ANIMATION_1 = 0,
+    MODE_ANIMATION_2 = 1,
+    // Extend with additional modes as needed
+};
+
+// Function declarations
+void setMode(Mode mode);
+void modeHandler();
+void initModeFromEEPROM();
+
+#endif // MODES_H
