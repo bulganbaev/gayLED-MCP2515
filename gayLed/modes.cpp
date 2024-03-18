@@ -11,6 +11,7 @@ void setMode(Mode mode) {
         EEPROM.put(MODE_EEPROM_ADDR, currentMode); // Save current mode
         EEPROM.commit(); // Ensure data is written to EEPROM
         EEPROM.end(); // Clean up
+        Serial.println("Switched mode: " + String(currentMode));
     }
 }
 
@@ -42,4 +43,9 @@ void initModeFromEEPROM() {
         // If the saved mode is invalid, revert to a default mode
         currentMode = MODE_ANIMATION_1;
     }
+    Serial.println("Current mode: " + String(currentMode));
+
+}
+Mode getCurrentMode() {
+    return currentMode;
 }

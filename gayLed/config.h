@@ -13,6 +13,7 @@
 #define SIDE2       50
 
 #define MODE_EEPROM_ADDR 0
+#define ANIM_MODE_EEPROM_ADDR (MODE_EEPROM_ADDR + 1)
 
 #define WIFI_SSID "ledControl"
 #define WIFI_PASSWORD "pidor123" 

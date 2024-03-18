@@ -1,6 +1,11 @@
-//obd.h
+// obd.h
 #ifndef OBD_H
 #define OBD_H
+
+#include <mcp_can.h>
+#include <SPI.h>
+
+// OBD-II PIDs definitions
 //----------------------------------------------
 #define PID_ENGINE_LOAD 0x04
 #define PID_COOLANT_TEMP 0x05
@@ -54,12 +59,16 @@
 #define PID_ENGINE_TORQUE_PERCENTAGE 0x62
 #define PID_ENGINE_REF_TORQUE 0x63
 //----------------------------------------------
-#define CAN_ID_PID 0x7DF //OBD-II CAN frame ID
-//----------------------------------------------
-#include <mcp_can.h>
-#include <SPI.h>
 
+#define CAN_ID_PID 0x7DF // OBD-II CAN frame ID
 #define CAN0_INT 4                              
-MCP_CAN CAN0(15);
+
+
+// Function prototypes
+bool obd_init();
+bool sendPID(unsigned char pid);
+int receivePID(unsigned char pid); // Directly return an int
 
 #endif // OBD_H
+
+

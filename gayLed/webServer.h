@@ -6,6 +6,7 @@
 #include "htmlPages.h"
 #include "config.h"
 #include "modes.h" // Include modes for setting animation modes
+#include "obd.h"
 
 extern ESP8266WebServer server; // Declare server as an external variable to be defined in webServer.cpp
 
@@ -14,5 +15,9 @@ void startWebServer();
 void handleRoot();
 void handleMode1();
 void handleMode2();
+void handleSetMode();
+void handleObd();
+void handleCustom();
+void sendObdData();
 
 #endif // WEBSERVER_H

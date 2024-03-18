@@ -12,6 +12,7 @@ enum Mode {
 };
 
 // Function declarations
+Mode getCurrentMode();
 void setMode(Mode mode);
 void modeHandler();
 void initModeFromEEPROM();
