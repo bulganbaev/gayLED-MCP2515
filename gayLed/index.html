@@ -1,18 +1,112 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>LED Controller</title>
+    <title>Custom Animation Settings</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background-color: #f0f0f0; }
-        h1 { color: #333; }
-        .button { display: inline-block; background-color: #008CBA; color: white; padding: 15px 25px; text-align: center; text-decoration: none; font-size: 16px; margin: 4px 2px; cursor: pointer; }
+        #colorPickers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+        }
+        .color-picker-container button {
+            margin-left: 5px;
+        }
+        .settings-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .settings-container input[type=number], .settings-container select {
+            width: auto; /* Adjust based on content */
+            margin: 0 5px;
+        }
     </style>
 </head>
 <body>
-    <h1>LED Controller</h1>
-    <p>Control your LED animations:</p>
-    <a href="/mode1" class="button">Rainbow</a>
-    <a href="/mode2" class="button">Chase</a>
-    <!-- Add more buttons or links for additional modes or functionalities -->
+    <h2>Update Animation Settings</h2>
+    <form id="animationSettingsForm" action="/updateCustom" method="POST">
+        <div id="colorPickers">
+            <div class="color-picker-container">
+                <input type="color" name="colorSet[]">
+                <button type="button" class="removeColor">-</button>
+            </div>
+        </div>
+        <button type="button" id="addColor">+</button><br><br>
+
+        <div class="settings-container">
+            <label for="speedOfAnimation">Speed of Animation:</label>
+            <button type="button" onclick="adjustValue('speedOfAnimation', -1)">-</button>
+            <input type="number" id="speedOfAnimation" name="speedOfAnimation" min="1" max="100" value="10">
+            <button type="button" onclick="adjustValue('speedOfAnimation', 1)">+</button>
+        </div>
+
+        <div class="settings-container">
+            <label for="brightness">Brightness:</label>
+            <button type="button" onclick="adjustValue('brightness', -1)">-</button>
+            <input type="number" id="brightness" name="brightness" min="0" max="255" value="255">
+            <button type="button" onclick="adjustValue('brightness', 1)">+</button>
+        </div>
+
+        <div class="settings-container">
+            <label for="animationIndex">Animation Type:</label>
+            <select id="animationIndex" name="animationIndex">
+                <option value="0">Color Wave</option>
+                <option value="1">Breathing Light</option>
+                <option value="2">Rainbow Cycle</option>
+            </select><br>
+        </div>
+
+        <input type="submit" value="Update Settings">
+    </form>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set a random color for the initial color picker
+            setRandomColor(document.querySelector('input[type="color"]'));
+
+            document.getElementById('addColor').addEventListener('click', function() {
+                var container = document.getElementById('colorPickers');
+                if(container.children.length < 10) {
+                    var newColorPicker = document.createElement('div');
+                    newColorPicker.classList.add('color-picker-container');
+                    newColorPicker.innerHTML = '<input type="color" name="colorSet[]"><button type="button" class="removeColor">-</button>';
+                    container.appendChild(newColorPicker);
+                    // Set a random color for this new color picker
+                    setRandomColor(newColorPicker.querySelector('input[type="color"]'));
+                } else {
+                    alert('You can add up to 10 colors.');
+                }
+            });
+
+            document.getElementById('colorPickers').addEventListener('click', function(e) {
+                if(e.target.className === 'removeColor') {
+                    e.target.parentNode.remove();
+                }
+            });
+        });
+
+        function setRandomColor(colorInput) {
+            // Generate random color
+            var randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+            // Set the random color as the value
+            colorInput.value = randomColor;
+        }
+
+        function adjustValue(fieldId, delta) {
+            var field = document.getElementById(fieldId);
+            var currentValue = parseInt(field.value);
+            var newValue = currentValue + delta;
+
+            // Respect the min and max values
+            if (newValue >= parseInt(field.min) && newValue <= parseInt(field.max)) {
+                field.value = newValue;
+            }
+        }
+    </script>
 </body>
 </html>

@@ -6,9 +6,10 @@
 #include "animations.h"
 #include "webServer.h"
 #include "modes.h"
-#include "obd.h"
+#include "can_data.h"
 
 CRGB leds[NUM_LEDS];
+CRGB stop_leds[NUM_STOP_LEDS];
 
 
 void setup() {
@@ -18,15 +19,19 @@ void setup() {
     Serial.println("__________________________");
 
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
+    FastLED.addLeds<LED_TYPE, LED_STOP_PIN, COLOR_ORDER>(stop_leds, NUM_STOP_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
     initModeFromEEPROM();
+    initCustomFromEEPROM();
     startWebServer();
-    if(obd_init() == false){
-      Serial.println("Obd Error");
-    }
+    initializeCANDevices();
+    pinMode(LED_BUILTIN, OUTPUT);
+
 }
 
 void loop() {
-    server.handleClient(); // Handle client requests
+    server.handleClient(); 
     modeHandler(); 
+  
+
 }

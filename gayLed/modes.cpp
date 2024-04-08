@@ -2,7 +2,7 @@
 #include "modes.h"
 
 // Global variable to hold the current mode
-volatile Mode currentMode = MODE_ANIMATION_1; // Default mode
+volatile Mode currentMode = MODE_1; // Default mode
 
 void setMode(Mode mode) {
     if (currentMode != mode) {
@@ -17,11 +17,12 @@ void setMode(Mode mode) {
 
 void modeHandler() {
     switch (currentMode) {
-        case MODE_ANIMATION_1:
-            rainbow();
+        case MODE_1:
+            digitalWrite(LED_BUILTIN, LOW);
             break;
-        case MODE_ANIMATION_2:
-            chase();
+        case MODE_2:
+            digitalWrite(LED_BUILTIN, HIGH);
+            loopAnimations();
             break;
         // Extend with additional cases as needed
         default:
@@ -34,18 +35,21 @@ void initModeFromEEPROM() {
     EEPROM.begin(512); // Initialize EEPROM to read
     Mode savedMode;
     EEPROM.get(MODE_EEPROM_ADDR, savedMode); // Read mode from EEPROM
-    EEPROM.end(); // Clean up
 
     // Validate the saved mode before using it
-    if (savedMode >= MODE_ANIMATION_1 && savedMode <= MODE_ANIMATION_2) { // Adjust the range according to your actual modes
+    if (savedMode >= MODE_1 && savedMode <= MODE_2) { // Adjust the range according to your actual modes
         currentMode = savedMode;
     } else {
         // If the saved mode is invalid, revert to a default mode
-        currentMode = MODE_ANIMATION_1;
+        currentMode = MODE_1;
     }
-    Serial.println("Current mode: " + String(currentMode));
 
+
+    EEPROM.end(); // Clean up
+    Serial.println("Current mode: " + String(currentMode));
 }
+
+
 Mode getCurrentMode() {
     return currentMode;
 }

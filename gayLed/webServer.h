@@ -4,9 +4,9 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266WebServer.h>
 #include "htmlPages.h"
+#include "animations.h"
 #include "config.h"
 #include "modes.h" // Include modes for setting animation modes
-#include "obd.h"
 
 extern ESP8266WebServer server; // Declare server as an external variable to be defined in webServer.cpp
 
@@ -18,6 +18,7 @@ void handleMode2();
 void handleSetMode();
 void handleObd();
 void handleCustom();
+void handleUpdateCustom();
 void sendObdData();
 
 #endif // WEBSERVER_H

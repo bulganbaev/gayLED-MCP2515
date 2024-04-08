@@ -6,10 +6,11 @@
 
 // Define mode identifiers for easier handling
 enum Mode {
-    MODE_ANIMATION_1 = 0,
-    MODE_ANIMATION_2 = 1,
+    MODE_1 = 0,
+    MODE_2 = 1,
     // Extend with additional modes as needed
 };
+
 
 // Function declarations
 Mode getCurrentMode();

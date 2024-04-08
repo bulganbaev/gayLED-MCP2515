@@ -1,7 +1,5 @@
-//htmlPages.h
 #ifndef HTMLPAGES_H
 #define HTMLPAGES_H
-
 #include <pgmspace.h>
 
 const char HTML_HEADER[] PROGMEM = R"rawliteral(
@@ -67,6 +65,28 @@ const char HTML_HEADER[] PROGMEM = R"rawliteral(
         select:focus {
             box-shadow: 0 0 5px 2px rgba(0, 140, 186, 0.5); /* Focus shadow */
         }
+        #colorPickers {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 10px;
+        }
+        .color-picker-container {
+            display: flex;
+            align-items: center;
+        }
+        .color-picker-container button {
+            margin-left: 5px;
+        }
+        .settings-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        .settings-container input[type=number], .settings-container select {
+            width: auto; /* Adjust based on content */
+            margin: 0 5px;
+        }
     </style>
 </head>
 <body>
@@ -80,6 +100,53 @@ function updateAction() {
     var formAction = mode == '1' ? '/obd' : '/custom'; 
     document.getElementById('modeForm').action = formAction;
     console.log(formAction);
+}
+</script>
+)rawliteral";
+
+const char HTML_SCRIPT_CUSTOM[] PROGMEM = R"rawliteral(
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+        // Set a random color for the initial color picker
+        setRandomColor(document.querySelector('input[type="color"]'));
+
+        document.getElementById('addColor').addEventListener('click', function() {
+            var container = document.getElementById('colorPickers');
+            if(container.children.length < 10) {
+                var newColorPicker = document.createElement('div');
+                newColorPicker.classList.add('color-picker-container');
+                newColorPicker.innerHTML = '<input type="color" name="colorSet[]"><button type="button" class="removeColor">-</button>';
+                container.appendChild(newColorPicker);
+                // Set a random color for this new color picker
+                setRandomColor(newColorPicker.querySelector('input[type="color"]'));
+            } else {
+                alert('You can add up to 10 colors.');
+            }
+        });
+
+        document.getElementById('colorPickers').addEventListener('click', function(e) {
+            if(e.target.className === 'removeColor') {
+                e.target.parentNode.remove();
+            }
+        });
+    });
+
+    function setRandomColor(colorInput) {
+        // Generate random color
+        var randomColor = '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6, '0');
+        // Set the random color as the value
+        colorInput.value = randomColor;
+    }
+
+    function adjustValue(fieldId, delta) {
+        var field = document.getElementById(fieldId);
+        var currentValue = parseInt(field.value);
+        var newValue = currentValue + delta;
+
+        // Respect the min and max values
+        if (newValue >= parseInt(field.min) && newValue <= parseInt(field.max)) {
+            field.value = newValue;
+        }
 }
 </script>
 )rawliteral";
