@@ -20,6 +20,7 @@ void startWebServer() {
   server.on("/custom", handleCustom);
   server.on("/obd-data", sendObdData);
   server.on("/updateCustom", handleUpdateCustom);
+  server.on("/updateCan", handleUpdateCan);
   // Add more handlers as necessary
 
   server.begin();
@@ -81,7 +82,29 @@ void handleObd() {
         <h2>OBD Data</h2>
         <p>Coolant Temperature: <span id="coolantTemp">Loading...</span>°C</p>
         <p>Engine RPM: <span id="engineRpm">Loading...</span></p>
-        <script>
+        <form id="animationSettingsForm" action="/updateCan" method="POST">
+          <div class="settings-container">
+              <label for="minTemp">Minimal Temperature</label>
+              <input type="number" id="minTemp" name="minTemp" min="1" max="200" value=")" + String(can_setting.minTemp) + R"(">
+          </div>
+          <div class="settings-container">
+              <label for="maxTemp">Maximum Temperature</label>
+              <input type="number" id="maxTemp" name="maxTemp" min="1" max="200" value=")" + String(can_setting.maxTemp) + R"(">
+          </div>
+          <div class="settings-container">
+              <label for="minRPM">Minimal RPM</label>
+              <input type="number" id="minRPM" name="minRPM" min="1" max="9000" value=")" + String(can_setting.minRPM) + R"(">
+          </div>
+          <div class="settings-container">
+              <label for="maxRPM">Maximum RPM</label>
+              <input type="number" id="maxRPM" name="maxRPM" min="1" max="9000" value=")" + String(can_setting.maxRPM) + R"(">
+          </div>
+          <input type="submit" value="Update Settings">
+        </form>
+    )";
+
+  htmlContent += R"(
+      <script>
             function fetchData() {
                 fetch('/obd-data')
                 .then(response => response.json())
@@ -93,8 +116,8 @@ void handleObd() {
             }
             setInterval(fetchData, 100);
             fetchData(); // Initial fetch
-        </script>
-    )";
+        </script>   
+  )";
 
   htmlContent += FPSTR(HTML_FOOTER);
   server.send(200, "text/html", htmlContent);
@@ -229,6 +252,16 @@ void handleUpdateCustom() {
   // Apply settings to LEDs or other output (not shown)
 
   // Redirect or respond to the client after handling
+  server.sendHeader("Location", "/", true); // Redirect back to the main page
+  server.send(302, "text/plain", ""); // HTTP status code for redirection
+}
+
+void handleUpdateCan(){
+  can_setting.minTemp = server.arg("minTemp").toInt();
+  can_setting.maxTemp = server.arg("maxTemp").toInt();
+  can_setting.minRPM = server.arg("minRPM").toInt();
+  can_setting.maxRPM = server.arg("maxRPM").toInt();
+  saveSettings();
   server.sendHeader("Location", "/", true); // Redirect back to the main page
   server.send(302, "text/plain", ""); // HTTP status code for redirection
 }

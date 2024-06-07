@@ -19,6 +19,7 @@ void handleSetMode();
 void handleObd();
 void handleCustom();
 void handleUpdateCustom();
+void handleUpdateCan();
 void sendObdData();
 
 #endif // WEBSERVER_H

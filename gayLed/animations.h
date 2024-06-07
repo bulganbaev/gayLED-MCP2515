@@ -22,7 +22,16 @@ struct CustomSettings {
   uint8_t animationIndex;
 };
 
+struct CanSettings {
+  uint8_t maxTemp; // Actual number of colors stored
+  uint8_t minTemp;
+  uint16_t minRPM;
+  uint16_t maxRPM;
+
+};
+
 extern CustomSettings custom_setting;
+extern CanSettings can_setting;
 
 
 void initCustomFromEEPROM();

@@ -4,6 +4,7 @@
 
 CRGB colorSet[9] = {}; // here we need to be able to add from 1 to 10 colors
 CustomSettings custom_setting;
+CanSettings can_setting;
 
 // Global state variables for animations
 int wavePosition = 0;
@@ -27,6 +28,17 @@ void initCustomFromEEPROM(){
       colorSet[i] = CRGB((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF);
     }
   }  
+
+  EEPROM.get(CAN_SETTING_EEPROM_ADDR, can_setting);
+  
+  // Check for validity; if invalid, load defaults
+  if (can_setting.maxTemp < 1 || can_setting.maxTemp > 100) {
+    can_setting.maxTemp = 100;
+    can_setting.minTemp = 50;
+    can_setting.maxRPM = 7000;
+    can_setting.minRPM = 1000;
+  } 
+  
   EEPROM.end();
 }
 void loadDefaultSettings() {
@@ -52,6 +64,8 @@ void loadDefaultSettings() {
 void saveSettings() {
     EEPROM.begin(512);
     EEPROM.put(CUSTOM_SETTING_EEPROM_ADDR, custom_setting);
+    EEPROM.commit();
+    EEPROM.put(CAN_SETTING_EEPROM_ADDR, can_setting);
     EEPROM.commit();
     EEPROM.end();
 
