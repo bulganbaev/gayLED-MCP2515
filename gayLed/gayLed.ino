@@ -21,9 +21,9 @@ void setup() {
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
     FastLED.addLeds<LED_TYPE, LED_STOP_PIN, COLOR_ORDER>(stop_leds, NUM_STOP_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
-    // initModeFromEEPROM();
-    // initCustomFromEEPROM();
-    // startWebServer();
+    initMode();
+    // initCustom();
+    startWebServer();
     initializeCANDevices();
     pinMode(LED_BUILTIN, OUTPUT);
 

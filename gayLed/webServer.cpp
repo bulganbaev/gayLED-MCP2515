@@ -248,7 +248,6 @@ void handleUpdateCustom() {
   custom_setting.animationIndex = server.arg("animationIndex").toInt();
 
   // Save the updated settings to EEPROM
-  saveSettings();
 
   // Apply settings to LEDs or other output (not shown)
 
@@ -262,7 +261,7 @@ void handleUpdateCan(){
   can_setting.maxTemp = server.arg("maxTemp").toInt();
   can_setting.minRPM = server.arg("minRPM").toInt();
   can_setting.maxRPM = server.arg("maxRPM").toInt();
-  saveSettings();
+  
   server.sendHeader("Location", "/", true); // Redirect back to the main page
   server.send(302, "text/plain", ""); // HTTP status code for redirection
 }

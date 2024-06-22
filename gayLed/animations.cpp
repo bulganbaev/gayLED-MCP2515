@@ -15,66 +15,8 @@ bool gettingBrighter = true;
 unsigned long lastUpdateTime = 0;
 int hue = 0;
 
-void initCustomFromEEPROM() {
-    if (!SPIFFS.begin()) {
-        Serial.println("SPIFFS initialization failed!");
-        return;
-    }
-
-    if (!SPIFFS.exists("/custom_setting.dat")) {
-        Serial.println("File /custom_setting.dat does not exist, loading default settings.");
-        loadDefaultSettings();
-    } else {
-        File customFile = SPIFFS.open("/custom_setting.dat", "r");
-        if (customFile) {
-            customFile.readBytes((char*)&custom_setting, sizeof(CustomSettings));
-            customFile.close();
-            
-            // Check for validity; if invalid, load defaults
-            if (custom_setting.colorCount < 1 || custom_setting.colorCount > 9) {
-                loadDefaultSettings();
-            } else {
-                // Convert colorSetHex to CRGB colorSet
-                for (int i = 0; i < custom_setting.colorCount; ++i) {
-                    uint32_t color = custom_setting.colorSetHex[i];
-                    colorSet[i] = CRGB((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF);
-                }
-            }
-        } else {
-            Serial.println("Failed to open /custom_setting.dat for reading, loading default settings.");
-            loadDefaultSettings();
-        }
-    }
-
-    if (!SPIFFS.exists("/can_setting.dat")) {
-        Serial.println("File /can_setting.dat does not exist, setting default CAN settings.");
-        can_setting.maxTemp = 100;
-        can_setting.minTemp = 50;
-        can_setting.maxRPM = 7000;
-        can_setting.minRPM = 1000;
-    } else {
-        File canFile = SPIFFS.open("/can_setting.dat", "r");
-        if (canFile) {
-            canFile.readBytes((char*)&can_setting, sizeof(CanSettings));
-            canFile.close();
-            
-            // Check for validity; if invalid, load defaults
-            if (can_setting.maxTemp < 1 || can_setting.maxTemp > 100) {
-                can_setting.maxTemp = 100;
-                can_setting.minTemp = 50;
-                can_setting.maxRPM = 7000;
-                can_setting.minRPM = 1000;
-            }
-        } else {
-            Serial.println("Failed to open /can_setting.dat for reading, setting default CAN settings.");
-            can_setting.maxTemp = 100;
-            can_setting.minTemp = 50;
-            can_setting.maxRPM = 7000;
-            can_setting.minRPM = 1000;
-        }
-    }
-
-    SPIFFS.end();
+void initCustom() {
+    loadDefaultSettings()
 }
 
 void loadDefaultSettings() {
@@ -91,6 +33,11 @@ void loadDefaultSettings() {
     custom_setting.brightness = 255;
     custom_setting.animationIndex = 0;
 
+    can_setting.maxTemp = 100;
+    can_setting.minTemp = 50;
+    can_setting.maxRPM = 7000;
+    can_setting.minRPM = 1000;
+
     // Convert hex colors to CRGB for runtime use
     for (int i = 0; i < custom_setting.colorCount; ++i) {
         uint32_t hexColor = custom_setting.colorSetHex[i];
@@ -98,26 +45,6 @@ void loadDefaultSettings() {
     }
 }
 
-void saveSettings() {
-    if (!SPIFFS.begin()) {
-        Serial.println("SPIFFS initialization failed!");
-        return;
-    }
-
-    File customFile = SPIFFS.open("/custom_setting.dat", "w");
-    if (customFile) {
-        customFile.write((const uint8_t*)&custom_setting, sizeof(CustomSettings));
-        customFile.close();
-    }
-
-    File canFile = SPIFFS.open("/can_setting.dat", "w");
-    if (canFile) {
-        canFile.write((const uint8_t*)&can_setting, sizeof(CanSettings));
-        canFile.close();
-    }
-
-    SPIFFS.end();
-}
 
 void loopAnimations() {
     switch(custom_setting.animationIndex % 3) {

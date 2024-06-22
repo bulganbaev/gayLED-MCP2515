@@ -35,7 +35,7 @@ extern CustomSettings custom_setting;
 extern CanSettings can_setting;
 
 
-void initCustomFromEEPROM();
+void initCustom();
 void loadDefaultSettings();
 void saveSettings();
 

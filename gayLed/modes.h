@@ -1,3 +1,4 @@
+//modes.h
 #ifndef MODES_H
 #define MODES_H
 
@@ -16,6 +17,6 @@ enum Mode {
 Mode getCurrentMode();
 void setMode(Mode mode);
 void modeHandler();
-void initModeFromEEPROM();
+void initMode();
 
 #endif // MODES_H
