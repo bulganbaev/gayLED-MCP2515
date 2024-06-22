@@ -4,7 +4,8 @@
 
 #include <FastLED.h> // Make sure to include FastLED here or in the main sketch
 #include "config.h"
-#include <EEPROM.h>
+#include "can_data.h"
+
 
 extern CRGB leds[];
 extern CRGB stop_leds[];

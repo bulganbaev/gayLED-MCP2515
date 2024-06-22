@@ -1,4 +1,5 @@
 //animations.cpp
+#include <FS.h> // Include the SPIFFS library
 #include "animations.h"
 
 
@@ -14,123 +15,169 @@ bool gettingBrighter = true;
 unsigned long lastUpdateTime = 0;
 int hue = 0;
 
-void initCustomFromEEPROM(){
-  EEPROM.begin(512);
-  EEPROM.get(CUSTOM_SETTING_EEPROM_ADDR, custom_setting);
-  
-  // Check for validity; if invalid, load defaults
-  if (custom_setting.colorCount < 1 || custom_setting.colorCount > 9) {
-    loadDefaultSettings();
-  } else {
-    // Convert colorSetHex to CRGB colorSet
-    for (int i = 0; i < custom_setting.colorCount; ++i) {
-      uint32_t color = custom_setting.colorSetHex[i];
-      colorSet[i] = CRGB((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF);
+void initCustomFromEEPROM() {
+    if (!SPIFFS.begin()) {
+        Serial.println("SPIFFS initialization failed!");
+        return;
     }
-  }  
 
-  EEPROM.get(CAN_SETTING_EEPROM_ADDR, can_setting);
-  
-  // Check for validity; if invalid, load defaults
-  if (can_setting.maxTemp < 1 || can_setting.maxTemp > 100) {
-    can_setting.maxTemp = 100;
-    can_setting.minTemp = 50;
-    can_setting.maxRPM = 7000;
-    can_setting.minRPM = 1000;
-  } 
-  
-  EEPROM.end();
+    if (!SPIFFS.exists("/custom_setting.dat")) {
+        Serial.println("File /custom_setting.dat does not exist, loading default settings.");
+        loadDefaultSettings();
+    } else {
+        File customFile = SPIFFS.open("/custom_setting.dat", "r");
+        if (customFile) {
+            customFile.readBytes((char*)&custom_setting, sizeof(CustomSettings));
+            customFile.close();
+            
+            // Check for validity; if invalid, load defaults
+            if (custom_setting.colorCount < 1 || custom_setting.colorCount > 9) {
+                loadDefaultSettings();
+            } else {
+                // Convert colorSetHex to CRGB colorSet
+                for (int i = 0; i < custom_setting.colorCount; ++i) {
+                    uint32_t color = custom_setting.colorSetHex[i];
+                    colorSet[i] = CRGB((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF);
+                }
+            }
+        } else {
+            Serial.println("Failed to open /custom_setting.dat for reading, loading default settings.");
+            loadDefaultSettings();
+        }
+    }
+
+    if (!SPIFFS.exists("/can_setting.dat")) {
+        Serial.println("File /can_setting.dat does not exist, setting default CAN settings.");
+        can_setting.maxTemp = 100;
+        can_setting.minTemp = 50;
+        can_setting.maxRPM = 7000;
+        can_setting.minRPM = 1000;
+    } else {
+        File canFile = SPIFFS.open("/can_setting.dat", "r");
+        if (canFile) {
+            canFile.readBytes((char*)&can_setting, sizeof(CanSettings));
+            canFile.close();
+            
+            // Check for validity; if invalid, load defaults
+            if (can_setting.maxTemp < 1 || can_setting.maxTemp > 100) {
+                can_setting.maxTemp = 100;
+                can_setting.minTemp = 50;
+                can_setting.maxRPM = 7000;
+                can_setting.minRPM = 1000;
+            }
+        } else {
+            Serial.println("Failed to open /can_setting.dat for reading, setting default CAN settings.");
+            can_setting.maxTemp = 100;
+            can_setting.minTemp = 50;
+            can_setting.maxRPM = 7000;
+            can_setting.minRPM = 1000;
+        }
+    }
+
+    SPIFFS.end();
 }
+
 void loadDefaultSettings() {
-  // LGBT flag colors in hex
-  custom_setting.colorSetHex[0] = 0xFF0000; // Red
-  custom_setting.colorSetHex[1] = 0xFFA500; // Orange
-  custom_setting.colorSetHex[2] = 0xFFFF00; // Yellow
-  custom_setting.colorSetHex[3] = 0x008000; // Green
-  custom_setting.colorSetHex[4] = 0x0000FF; // Blue
-  custom_setting.colorSetHex[5] = 0x800080; // Purple
-  
-  custom_setting.colorCount = 6; // Six colors for the LGBT flag
-  custom_setting.speedOfAnimation = 10;
-  custom_setting.brightness = 255;
-  custom_setting.animationIndex = 0;
+    // LGBT flag colors in hex
+    custom_setting.colorSetHex[0] = 0xFF0000; // Red
+    custom_setting.colorSetHex[1] = 0xFFA500; // Orange
+    custom_setting.colorSetHex[2] = 0xFFFF00; // Yellow
+    custom_setting.colorSetHex[3] = 0x008000; // Green
+    custom_setting.colorSetHex[4] = 0x0000FF; // Blue
+    custom_setting.colorSetHex[5] = 0x800080; // Purple
 
-  // Convert hex colors to CRGB for runtime use
-  for (int i = 0; i < custom_setting.colorCount; ++i) {
-    uint32_t hexColor = custom_setting.colorSetHex[i];
-    colorSet[i] = CRGB((hexColor >> 16) & 0xFF, (hexColor >> 8) & 0xFF, hexColor & 0xFF);
-  }
+    custom_setting.colorCount = 6; // Six colors for the LGBT flag
+    custom_setting.speedOfAnimation = 10;
+    custom_setting.brightness = 255;
+    custom_setting.animationIndex = 0;
+
+    // Convert hex colors to CRGB for runtime use
+    for (int i = 0; i < custom_setting.colorCount; ++i) {
+        uint32_t hexColor = custom_setting.colorSetHex[i];
+        colorSet[i] = CRGB((hexColor >> 16) & 0xFF, (hexColor >> 8) & 0xFF, hexColor & 0xFF);
+    }
 }
+
 void saveSettings() {
-    EEPROM.begin(512);
-    EEPROM.put(CUSTOM_SETTING_EEPROM_ADDR, custom_setting);
-    EEPROM.commit();
-    EEPROM.put(CAN_SETTING_EEPROM_ADDR, can_setting);
-    EEPROM.commit();
-    EEPROM.end();
+    if (!SPIFFS.begin()) {
+        Serial.println("SPIFFS initialization failed!");
+        return;
+    }
 
+    File customFile = SPIFFS.open("/custom_setting.dat", "w");
+    if (customFile) {
+        customFile.write((const uint8_t*)&custom_setting, sizeof(CustomSettings));
+        customFile.close();
+    }
 
+    File canFile = SPIFFS.open("/can_setting.dat", "w");
+    if (canFile) {
+        canFile.write((const uint8_t*)&can_setting, sizeof(CanSettings));
+        canFile.close();
+    }
+
+    SPIFFS.end();
 }
 
 void loopAnimations() {
-  switch(custom_setting.animationIndex % 3) {
-    case 0:
-      colorWave();
-      break;
-    case 1:
-      breathingLight();
-      break;
-    case 2:
-      rainbowCycle();
-      break;
-  }
+    switch(custom_setting.animationIndex % 3) {
+        case 0:
+            colorWave();
+            break;
+        case 1:
+            breathingLight();
+            break;
+        case 2:
+            rainbowCycle();
+            break;
+    }
 }
 
 void colorWave() {
-  fill_solid(leds, NUM_LEDS, colorSet[colorIndex]); // Set the whole strip to the current color
-  FastLED.show();
-  wavePosition++;
-  if(wavePosition >= NUM_LEDS) {
-    wavePosition = 0;
-    colorIndex = (colorIndex + 1) % (sizeof(colorSet) / sizeof(colorSet[0]));
-  }
-  delay(100 - custom_setting.speedOfAnimation);
+    fill_solid(leds, NUM_LEDS, colorSet[colorIndex]); // Set the whole strip to the current color
+    FastLED.show();
+    wavePosition++;
+    if(wavePosition >= NUM_LEDS) {
+        wavePosition = 0;
+        colorIndex = (colorIndex + 1) % custom_setting.colorCount;
+    }
+    delay(100 - custom_setting.speedOfAnimation);
 }
 
 void breathingLight() {
-  if (millis() - lastUpdateTime > (unsigned long)(100 - custom_setting.speedOfAnimation)) {
-    lastUpdateTime = millis();
-    if (gettingBrighter) {
-      currentBrightness += 5;
-      if (currentBrightness >= custom_setting.brightness) {
-        currentBrightness = custom_setting.brightness;
-        gettingBrighter = false;
-      }
-    } else {
-      currentBrightness -= 5;
-      if (currentBrightness <= 0) {
-        currentBrightness = 0;
-        gettingBrighter = true;
-        colorIndex = (colorIndex + 1) % (sizeof(colorSet) / sizeof(colorSet[0]));
-      }
-    }
+    if (millis() - lastUpdateTime > (unsigned long)(100 - custom_setting.speedOfAnimation)) {
+        lastUpdateTime = millis();
+        if (gettingBrighter) {
+            currentBrightness += 5;
+            if (currentBrightness >= custom_setting.brightness) {
+                currentBrightness = custom_setting.brightness;
+                gettingBrighter = false;
+            }
+        } else {
+            currentBrightness -= 5;
+            if (currentBrightness <= 0) {
+                currentBrightness = 0;
+                gettingBrighter = true;
+                colorIndex = (colorIndex + 1) % custom_setting.colorCount;
+            }
+        }
 
-    for (int i = 0; i < NUM_LEDS; i++) {
-      leds[i] = colorSet[colorIndex];
-      leds[i].fadeToBlackBy(255 - currentBrightness);
+        for (int i = 0; i < NUM_LEDS; i++) {
+            leds[i] = colorSet[colorIndex];
+            leds[i].fadeToBlackBy(255 - currentBrightness);
+        }
+        FastLED.show();
     }
-    FastLED.show();
-  }
 }
 
 void rainbowCycle() {
-  for(int i = 0; i < NUM_LEDS; i++) {
-    int colorIndex = (hue + i * (sizeof(colorSet) / sizeof(colorSet[0]))) % (sizeof(colorSet) / sizeof(colorSet[0]));
-    leds[i] = colorSet[colorIndex];
-  }
-  FastLED.show();
-  hue = (hue + custom_setting.speedOfAnimation) % 256;
-  delay(20);
+    for(int i = 0; i < NUM_LEDS; i++) {
+        int colorIndex = (hue + i * (256 / custom_setting.colorCount)) % 256;
+        leds[i] = CHSV(colorIndex, 255, 255);
+    }
+    FastLED.show();
+    hue = (hue + custom_setting.speedOfAnimation) % 256;
+    delay(20);
 }
 
 // Can Side
@@ -140,20 +187,22 @@ void canAnimations(){
 
 // Implementation of the chase animation
 void rpmLevel() {
-    int level = random(7000);
-    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    int level = RPM; // Get the current RPM level
+    fill_solid(leds, NUM_LEDS, CRGB::Black); // Turn off all LEDs initially
 
-    int centerLed = (2 * SIDE1 + SIDE2) + (SIDE2 / 2) - 1; 
-    int numLedsToLight = map(level, MIN_LEVEL, MAX_LEVEL, 0, SIDE1 + SIDE2);
+    // Calculate the number of LEDs to light up based on RPM level
+    int numLedsToLight = map(level, MIN_LEVEL, MAX_LEVEL, 0, NUM_LEDS / 2);
 
-    int firstTransitionPoint = numLedsToLight * 0.3; // Transition for green to orange
-    int secondTransitionPoint = numLedsToLight * 0.5; // Transition for orange to red
+    // Define transition points for color changes
+    int firstTransitionPoint = numLedsToLight * 0.3; // Green to Orange transition
+    int secondTransitionPoint = numLedsToLight * 0.5; // Orange to Red transition
 
     for (int i = 0; i < numLedsToLight; i++) {
-        int indexLeft = (centerLed - i + NUM_LEDS) % NUM_LEDS;
-        int indexRight = (centerLed + i) % NUM_LEDS;
+        // Calculate LED indices for both ends
+        int indexStart = i;
+        int indexEnd = (NUM_LEDS - 1) - i;
 
-        // Calculate blend factor
+        // Initialize color blending factors and colors
         float blendFactor = 0;
         CRGB startColor;
         CRGB endColor;
@@ -173,14 +222,15 @@ void rpmLevel() {
             startColor = endColor = CRGB::Red;
         }
 
+        // Blend the colors based on the calculated blend factor
         CRGB color = blend(startColor, endColor, blendFactor * 255);
-        leds[indexLeft] = color;
-        leds[indexRight] = color;
+        leds[indexStart] = color; // Set color for the starting LED
+        leds[indexEnd] = color; // Set color for the ending LED
     }
 
-    FastLED.show();
+    FastLED.show(); // Display the LED changes
 
-    // Blinking effect for the last 20% if level is 7000, adjusting the blink delay
+    // Blinking effect for the last 20% if RPM level is at MAX_LEVEL
     if (level == MAX_LEVEL) {
         static bool blinkState = false;
         static unsigned long lastBlinkTime = 0;
@@ -190,32 +240,33 @@ void rpmLevel() {
             lastBlinkTime = currentMillis;
 
             if (!blinkState) {
+                // Turn off LEDs for the blinking effect
                 for (int i = secondTransitionPoint; i < numLedsToLight; i++) {
-                    int indexLeft = (centerLed - i + NUM_LEDS) % NUM_LEDS;
-                    int indexRight = (centerLed + i) % NUM_LEDS;
-                    leds[indexLeft] = CRGB::Red; // Reapply red for blinking off state
-                    leds[indexRight] = CRGB::Red;
+                    int indexStart = i;
+                    int indexEnd = (NUM_LEDS - 1) - i;
+                    leds[indexStart] = CRGB::Red; // Reapply red for blinking off state
+                    leds[indexEnd] = CRGB::Red;
                 }
             }
         }
     }
 }
 
+
 void temperatureLevel(){
     // int currentTemp = getTempValue();
-    
 }
 
 CRGB convertToCRGB(String hexValue) {
-  uint32_t num = hexStringToUint32(hexValue);
-  return CRGB((num >> 16) & 0xFF, (num >> 8) & 0xFF, num & 0xFF);
+    uint32_t num = hexStringToUint32(hexValue);
+    return CRGB((num >> 16) & 0xFF, (num >> 8) & 0xFF, num & 0xFF);
 }
 
 uint32_t hexStringToUint32(String hex) {
-  // Assuming hex is prefixed with "#", remove it
-  if (hex.startsWith("#")) {
-    hex = hex.substring(1);
-  }
-  // Convert and return the hexadecimal string as a uint32_t value
-  return (uint32_t) strtoul(hex.c_str(), nullptr, 16);
+    // Assuming hex is prefixed with "#", remove it
+    if (hex.startsWith("#")) {
+        hex = hex.substring(1);
+    }
+    // Convert and return the hexadecimal string as a uint32_t value
+    return (uint32_t) strtoul(hex.c_str(), nullptr, 16);
 }

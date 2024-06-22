@@ -23,7 +23,7 @@ void readCANDataAndUpdateGlobals() {
         emucan.checkEMUcan(canMsg.can_id, canMsg.can_dlc, canMsg.data);
         if (emucan.EMUcan_Status() == EMUcan_RECEIVED_WITHIN_LAST_SECOND) {
             RPM = emucan.emu_data.RPM;
-            oilTemperature = emucan.emu_data.oilTemperature;
+            oilTemperature = emucan.emu_data.IAT;
         }
     }
     if (emucan.emu_data.flags1 & emucan.F_BRAKE_SWITCH) {
@@ -32,4 +32,5 @@ void readCANDataAndUpdateGlobals() {
     else{
         brake = false;
     }
+
 }

@@ -1,5 +1,6 @@
 //webServer.cpp
 #include "webServer.h"
+#include "can_data.h"
 
 // Define the web server on port 80
 ESP8266WebServer server(80);
@@ -217,8 +218,8 @@ void handleObd() {
 
 void sendObdData() {
 
-  int coolantTemp = random(7000);
-  int engineRpm = random(7000);
+  int coolantTemp = oilTemperature;
+  int engineRpm = RPM;
 
   String json = "{\"coolantTemp\":" + String(coolantTemp) + ",\"engineRpm\":" + String(engineRpm) + "}";
   server.send(200, "application/json", json);
