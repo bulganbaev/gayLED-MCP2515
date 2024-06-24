@@ -7,6 +7,7 @@ volatile Mode currentMode = MODE_1; // Default mode
 
 void setMode(Mode mode) {
     if (currentMode != mode) {
+        Serial.println("Switched to: " + String(mode));
         currentMode = mode;
     }
 }

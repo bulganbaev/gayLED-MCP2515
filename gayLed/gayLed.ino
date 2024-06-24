@@ -19,10 +19,10 @@ void setup() {
     Serial.println("__________________________");
 
     FastLED.addLeds<LED_TYPE, LED_PIN, COLOR_ORDER>(leds, NUM_LEDS);
-    FastLED.addLeds<LED_TYPE, LED_STOP_PIN, COLOR_ORDER>(stop_leds, NUM_STOP_LEDS);
+    FastLED.addLeds<LED_TYPE, LED_STOP_PIN, COLOR_ORDER_STOP>(stop_leds, NUM_STOP_LEDS);
     FastLED.setBrightness(BRIGHTNESS);
     initMode();
-    // initCustom();
+    initCustom();
     startWebServer();
     initializeCANDevices();
     pinMode(LED_BUILTIN, OUTPUT);
@@ -31,8 +31,7 @@ void setup() {
 
 void loop() {
     server.handleClient(); 
-    // modeHandler();
-    rpmLevel();
+    modeHandler();
     readCANDataAndUpdateGlobals();
   
 

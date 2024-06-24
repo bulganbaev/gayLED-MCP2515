@@ -43,11 +43,11 @@ void loopAnimations();
 void colorWave();
 void breathingLight();
 void rainbowCycle();
+void theaterChase();
 
 void canAnimations();
 void rpmLevel();
 void temperatureLevel();
 
-CRGB convertToCRGB(String hexColor); 
-uint32_t hexStringToUint32(String hex);
+
 #endif // ANIMATIONS_H

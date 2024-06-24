@@ -1,7 +1,6 @@
-//animations.cpp
 #include <FS.h> // Include the SPIFFS library
 #include "animations.h"
-
+#include "utils.h"
 
 CRGB colorSet[9] = {}; // here we need to be able to add from 1 to 10 colors
 CustomSettings custom_setting;
@@ -15,11 +14,26 @@ bool gettingBrighter = true;
 unsigned long lastUpdateTime = 0;
 int hue = 0;
 
+extern volatile bool updatingSettings; // Flag to block loopAnimations
+
+void initCustom();
+void loadDefaultSettings();
+void updateColorSetFromHex();
+void loopAnimations();
+void colorWave();
+void breathingLight();
+void rainbowCycle();
+void canAnimations();
+void rpmLevel();
+void temperatureLevel();
+
 void initCustom() {
-    loadDefaultSettings()
+    Serial.println("Initializing custom settings");
+    loadDefaultSettings();
 }
 
 void loadDefaultSettings() {
+    Serial.println("Loading default settings");
     // LGBT flag colors in hex
     custom_setting.colorSetHex[0] = 0xFF0000; // Red
     custom_setting.colorSetHex[1] = 0xFFA500; // Orange
@@ -29,50 +43,126 @@ void loadDefaultSettings() {
     custom_setting.colorSetHex[5] = 0x800080; // Purple
 
     custom_setting.colorCount = 6; // Six colors for the LGBT flag
-    custom_setting.speedOfAnimation = 10;
+    custom_setting.speedOfAnimation = 100;
     custom_setting.brightness = 255;
-    custom_setting.animationIndex = 0;
+    custom_setting.animationIndex = 2;
 
     can_setting.maxTemp = 100;
     can_setting.minTemp = 50;
     can_setting.maxRPM = 7000;
     can_setting.minRPM = 1000;
 
-    // Convert hex colors to CRGB for runtime use
+    // Update colorSet from colorSetHex
+    updateColorSetFromHex();
+    Serial.println("Default settings loaded");
+}
+
+void updateColorSetFromHex() {
     for (int i = 0; i < custom_setting.colorCount; ++i) {
         uint32_t hexColor = custom_setting.colorSetHex[i];
         colorSet[i] = CRGB((hexColor >> 16) & 0xFF, (hexColor >> 8) & 0xFF, hexColor & 0xFF);
     }
 }
 
-
 void loopAnimations() {
-    switch(custom_setting.animationIndex % 3) {
+    if (updatingSettings) {
+      colorIndex = 0;
+      return;
+    }; // Block animations if settings are being updated
+
+    // Serial.println("Looping animations");
+    switch (custom_setting.animationIndex % 4) {
         case 0:
+            // Serial.println("Running colorWave animation");
             colorWave();
             break;
         case 1:
+            // Serial.println("Running breathingLight animation");
             breathingLight();
             break;
         case 2:
+            // Serial.println("Running rainbowCycle animation");
             rainbowCycle();
             break;
+        case 3:
+            theaterChase();
+            break;
+
     }
+}
+void theaterChase() {
+    int delayTime = map(custom_setting.speedOfAnimation, 1, 100, 100, 1);
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    fill_solid(stop_leds, NUM_LEDS, CRGB::Black);
+
+    int snakeLength = 20;
+    for(int i=0; i<snakeLength; i++){
+      stop_leds[i+wavePosition] = colorSet[0];
+      leds[i+wavePosition] = colorSet[0];
+    }
+    wavePosition = wavePosition + 2*snakeLength/3;
+    if(wavePosition > NUM_LEDS - snakeLength){
+      wavePosition = wavePosition - NUM_LEDS + snakeLength;
+    }
+    FastLED.show();
+    delay(delayTime);
+}
+void colorWave() {
+    // Clear the strip before updating
+    int delayTime = map(custom_setting.speedOfAnimation, 1, 100, 100, 1);
+    fill_solid(leds, NUM_LEDS, CRGB::Black);
+    fill_solid(stop_leds, NUM_LEDS, CRGB::Black);
+
+    // Calculate the number of LEDs per color section
+    int ledsPerSection = NUM_LEDS / custom_setting.colorCount;
+
+    // Iterate through each color section
+    for (int i = 0; i < custom_setting.colorCount; i++) {
+        for (int j = 0; j < ledsPerSection; j++) {
+            if (i % 2 == 0) {
+                // Set even sections to the corresponding color
+                leds[i * ledsPerSection + j] = colorSet[i];
+                stop_leds[i * ledsPerSection + j] = colorSet[i];
+
+
+            } else {
+                // Set odd sections to black
+                leds[i * ledsPerSection + j] = CRGB::Black;
+                stop_leds[i * ledsPerSection + j] = CRGB::Black;
+
+
+            }
+        }
+    }
+    FastLED.show();
+    delay(delayTime);
+
+    // Alternate the sections
+    for (int i = 0; i < custom_setting.colorCount; i++) {
+        for (int j = 0; j < ledsPerSection; j++) {
+            if (i % 2 == 1) {
+                // Set odd sections to the corresponding color
+                leds[i * ledsPerSection + j] = colorSet[i];
+                stop_leds[i * ledsPerSection + j] = colorSet[i];
+
+
+            } else {
+                // Set even sections to black
+                leds[i * ledsPerSection + j] = CRGB::Black;
+                stop_leds[i * ledsPerSection + j] = CRGB::Black;
+
+            }
+        }
+    }
+    FastLED.show();
+    delay(delayTime);
 }
 
-void colorWave() {
-    fill_solid(leds, NUM_LEDS, colorSet[colorIndex]); // Set the whole strip to the current color
-    FastLED.show();
-    wavePosition++;
-    if(wavePosition >= NUM_LEDS) {
-        wavePosition = 0;
-        colorIndex = (colorIndex + 1) % custom_setting.colorCount;
-    }
-    delay(100 - custom_setting.speedOfAnimation);
-}
+
 
 void breathingLight() {
-    if (millis() - lastUpdateTime > (unsigned long)(100 - custom_setting.speedOfAnimation)) {
+    int delayTime = map(custom_setting.speedOfAnimation, 1, 100, 10, 1);
+    if (millis() - lastUpdateTime > (unsigned long)(delayTime)) {
         lastUpdateTime = millis();
         if (gettingBrighter) {
             currentBrightness += 5;
@@ -91,37 +181,47 @@ void breathingLight() {
 
         for (int i = 0; i < NUM_LEDS; i++) {
             leds[i] = colorSet[colorIndex];
-            leds[i].fadeToBlackBy(255 - currentBrightness);
+            leds[i].fadeLightBy(255 - currentBrightness);
+            stop_leds[i] = colorSet[colorIndex];
+            stop_leds[i].fadeLightBy(255 - currentBrightness);
         }
         FastLED.show();
     }
 }
 
 void rainbowCycle() {
-    for(int i = 0; i < NUM_LEDS; i++) {
-        int colorIndex = (hue + i * (256 / custom_setting.colorCount)) % 256;
-        leds[i] = CHSV(colorIndex, 255, 255);
+    for (int i = 0; i < NUM_LEDS; i++) {
+        leds[i] = CHSV((hue + i * 256 / NUM_LEDS) % 256, 255, custom_setting.brightness);
+        stop_leds[i] = CHSV((hue + i * 256 / NUM_LEDS) % 256, 255, custom_setting.brightness);
     }
     FastLED.show();
-    hue = (hue + custom_setting.speedOfAnimation) % 256;
-    delay(20);
+
+    hue = (hue + map(custom_setting.speedOfAnimation, 1, 100, 1, 10)) % 256;
+
+    // Map speedOfAnimation from 1-100 to delay range 200-10 milliseconds
+    int delayTime = map(custom_setting.speedOfAnimation, 1, 100, 10, 1);
+    delay(delayTime);
 }
 
 // Can Side
-void canAnimations(){
-
+void canAnimations() {
+    // Placeholder for CAN-specific animations
 }
 
 // Implementation of the chase animation
 void rpmLevel() {
     int level = RPM; // Get the current RPM level
+
     fill_solid(leds, NUM_LEDS, CRGB::Black); // Turn off all LEDs initially
+    fill_solid(stop_leds, NUM_LEDS, CRGB::Black);
+    int MIN_LEVEL = can_setting.minRPM;
+    int MAX_LEVEL = can_setting.maxRPM;
 
     // Calculate the number of LEDs to light up based on RPM level
     int numLedsToLight = map(level, MIN_LEVEL, MAX_LEVEL, 0, NUM_LEDS / 2);
 
     // Define transition points for color changes
-    int firstTransitionPoint = numLedsToLight * 0.3; // Green to Orange transition
+    int firstTransitionPoint = numLedsToLight * 0.2; // Green to Orange transition
     int secondTransitionPoint = numLedsToLight * 0.5; // Orange to Red transition
 
     for (int i = 0; i < numLedsToLight; i++) {
@@ -153,6 +253,8 @@ void rpmLevel() {
         CRGB color = blend(startColor, endColor, blendFactor * 255);
         leds[indexStart] = color; // Set color for the starting LED
         leds[indexEnd] = color; // Set color for the ending LED
+        stop_leds[indexStart] = color;
+        stop_leds[indexEnd] = color;
     }
 
     FastLED.show(); // Display the LED changes
@@ -173,27 +275,14 @@ void rpmLevel() {
                     int indexEnd = (NUM_LEDS - 1) - i;
                     leds[indexStart] = CRGB::Red; // Reapply red for blinking off state
                     leds[indexEnd] = CRGB::Red;
+                    stop_leds[indexStart] = CRGB::Red;
+                    stop_leds[indexEnd] = CRGB::Red;
                 }
             }
         }
     }
 }
 
-
-void temperatureLevel(){
-    // int currentTemp = getTempValue();
-}
-
-CRGB convertToCRGB(String hexValue) {
-    uint32_t num = hexStringToUint32(hexValue);
-    return CRGB((num >> 16) & 0xFF, (num >> 8) & 0xFF, num & 0xFF);
-}
-
-uint32_t hexStringToUint32(String hex) {
-    // Assuming hex is prefixed with "#", remove it
-    if (hex.startsWith("#")) {
-        hex = hex.substring(1);
-    }
-    // Convert and return the hexadecimal string as a uint32_t value
-    return (uint32_t) strtoul(hex.c_str(), nullptr, 16);
+void temperatureLevel() {
+    // Placeholder for temperature-related animation
 }
