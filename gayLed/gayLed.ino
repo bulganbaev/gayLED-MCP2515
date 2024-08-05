@@ -23,6 +23,7 @@ void setup() {
     FastLED.setBrightness(BRIGHTNESS);
     initMode();
     initCustom();
+    initCan();
     startWebServer();
     initializeCANDevices();
     pinMode(LED_BUILTIN, OUTPUT);

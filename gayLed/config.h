@@ -8,11 +8,11 @@
 #define BRIGHTNESS  100
 
 #define NUM_LEDS    300
-#define NUM_STOP_LEDS 300
+#define NUM_STOP_LEDS 576
 
 #define LED_TYPE    WS2812B
 #define COLOR_ORDER RGB
-#define COLOR_ORDER_STOP GRB
+#define COLOR_ORDER_STOP RGB
 
 
 #define WIFI_SSID "ledControl"

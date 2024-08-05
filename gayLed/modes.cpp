@@ -13,6 +13,12 @@ void setMode(Mode mode) {
 }
 
 void modeHandler() {
+    if(RPM < can_setting.minRPM){
+      setMode(MODE_2);
+    }
+    else{
+      setMode(MODE_1);
+    }
     switch (currentMode) {
         case MODE_1:
             digitalWrite(LED_BUILTIN, LOW);

@@ -1,3 +1,4 @@
+//webServer.cpp
 #include "webServer.h"
 #include "can_data.h"
 #include "utils.h"  // Include the new header file
@@ -46,16 +47,18 @@ void handleRoot() {
 
     String htmlContent = FPSTR(HTML_HEADER);
     htmlContent += F("<div class='row heading'><h1>LED Controller</h1></div>");
-    htmlContent += F("<div class='row mode-selection'><p>Select Mode:</p><br><form action='/setMode' method='get'><select id='mode' name='mode' class='dropdown' onchange='this.form.submit()'>");
+    htmlContent += F("<div class='row mode-selection'><p>Select Mode:</p><br><form action='/setMode' method='get'><select id='mode' name='mode' class='dropdown'>");
 
-    htmlContent += F("<option value='1'");
-    htmlContent += (getCurrentMode() == MODE_1 ? " selected" : "");
-    htmlContent += F(">OBD2</option>");
+    // htmlContent += F("<option value='1'");
+    // htmlContent += (getCurrentMode() == MODE_1 ? " selected" : "");
+    // htmlContent += F(">OBD2</option>");
 
-    htmlContent += F("<option value='2'");
-    htmlContent += (getCurrentMode() == MODE_2 ? " selected" : "");
-    htmlContent += F(">Custom</option>");
+    // htmlContent += F("<option value='2'");
+    // htmlContent += (getCurrentMode() == MODE_2 ? " selected" : "");
+    // htmlContent += F(">Custom</option>");
 
+    htmlContent += F("<option value='1'>OBD2</option>");
+    htmlContent += F("<option value='2'>Custom</option>");
     htmlContent += F("</select></form></div>");
     htmlContent += "<div class='row mode-properties'><form id='modeForm' method='get' onsubmit='updateAction();'><button type='submit'>Go to Mode Properties</button></form></div>";
     htmlContent += FPSTR(HTML_SCRIPT);
@@ -74,11 +77,11 @@ void handleSetMode() {
 
         switch (mode) {
             case 1:
-                setMode(MODE_1);
+                // setMode(MODE_1);
                 Serial.println("Mode set to OBD2");
                 break;
             case 2:
-                setMode(MODE_2);
+                // setMode(MODE_2);
                 Serial.println("Mode set to Custom");
                 break;
             default:
@@ -261,6 +264,14 @@ int countColorArgs() {
 void handleUpdateCustom() {
     Serial.println("Handling Update Custom Request");
 
+    // Check if any server arguments exist, if not, redirect to root
+    if (server.args() == 0) {
+        Serial.println("No arguments provided.");
+        server.sendHeader("Location", "/", true);
+        server.send(302, "text/plain", "");
+        return;
+    }
+
     if (!customSettingsChanged()) {
         Serial.println("No changes in custom settings detected.");
         server.sendHeader("Location", "/", true);
@@ -282,8 +293,7 @@ void handleUpdateCustom() {
                 colorSet[custom_setting.colorCount] = CRGB((hexcolor >> 16) & 0xff, (hexcolor >> 8) & 0xff, hexcolor & 0xff);
                 custom_setting.colorCount++;
             } else {
-
-                
+                Serial.println("Exceeded maximum number of colors.");
             }
         }
     }
@@ -293,6 +303,7 @@ void handleUpdateCustom() {
     custom_setting.animationIndex = server.arg("animationIndex").toInt();
 
     Serial.println("Custom settings updated");
+    saveCustomSettings();
     updatingSettings = false; // Unblock loopAnimations
     server.sendHeader("Location", "/", true);
     server.send(302, "text/plain", "");
@@ -300,6 +311,15 @@ void handleUpdateCustom() {
 
 void handleUpdateCan() {
     Serial.println("Handling Update CAN Request");
+    Serial.println(String(server.args()));
+
+    // Check if any server arguments exist, if not, redirect to root
+    if (server.args() == 0) {
+        Serial.println("No arguments provided.");
+        server.sendHeader("Location", "/", true);
+        server.send(302, "text/plain", "");
+        return;
+    }
 
     if (!canSettingsChanged()) {
         Serial.println("No changes in CAN settings detected.");
@@ -307,16 +327,17 @@ void handleUpdateCan() {
         server.send(302, "text/plain", "");
         return;
     }
-
     updatingSettings = true; // Block loopAnimations
 
     can_setting.minTemp = server.arg("minTemp").toInt();
     can_setting.maxTemp = server.arg("maxTemp").toInt();
     can_setting.minRPM = server.arg("minRPM").toInt();
     can_setting.maxRPM = server.arg("maxRPM").toInt();
+    saveCanSettings();
 
     Serial.println("CAN settings updated");
     updatingSettings = false; // Unblock loopAnimations
     server.sendHeader("Location", "/", true);
     server.send(302, "text/plain", "");
 }
+

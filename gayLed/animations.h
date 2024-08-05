@@ -5,6 +5,10 @@
 #include <FastLED.h> // Make sure to include FastLED here or in the main sketch
 #include "config.h"
 #include "can_data.h"
+#include <EEPROM.h>
+
+#define EEPROM_CUSTOM_SETTINGS_ADDR 0
+#define EEPROM_CAN_SETTINGS_ADDR sizeof(CustomSettings)
 
 
 extern CRGB leds[];
@@ -36,7 +40,9 @@ extern CanSettings can_setting;
 
 
 void initCustom();
-void loadDefaultSettings();
+void initCan();
+void loadDefaultCustomSettings();
+void loadDefaultCanSettings();
 void saveSettings();
 
 void loopAnimations();
@@ -48,6 +54,11 @@ void theaterChase();
 void canAnimations();
 void rpmLevel();
 void temperatureLevel();
+
+void saveCustomSettings();
+void loadCustomSettings();
+void saveCanSettings();
+void loadCanSettings();
 
 
 #endif // ANIMATIONS_H
